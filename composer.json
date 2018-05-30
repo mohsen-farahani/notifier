@@ -10,7 +10,7 @@
             "email": "aladini@asanbar.ir"
         }
     ],
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "autoload": {
         "psr-4": {
             "Asanbar\\Notifier\\": "src"
