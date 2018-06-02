@@ -11,18 +11,16 @@ use Illuminate\Http\Request;
 
 class Notifier
 {
-//    public static function sendPush($heading, $content, $player_ids, $extra)
-    public static function sendPush()
+    public static function sendPush(string $heading, string $content, array $player_ids, array $extra = null)
     {
-        $heading = request()->get("heading");
-        $content = request()->get("content");
-        $player_ids = request()->get("player_ids");
-        $extra = request()->get("extra");
+//        $heading = request()->get("heading");
+//        $content = request()->get("content");
+//        $player_ids = request()->get("player_ids");
+//        $extra = request()->get("extra");
 
 //        $pushProvider = PushAbstract::resolve(env("ACTIVE_PUSH_PROVIDER"));
 
         dispatch(new SendPushJob(new OneSignalProvider(), $heading, $content, $player_ids, $extra));
-        dd(1);
 
         return true;
     }

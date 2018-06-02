@@ -4,6 +4,7 @@ namespace AsanBar\Notifier\Traits;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
+use Illuminate\Support\Facades\Log;
 
 trait RestConnector
 {
@@ -35,7 +36,7 @@ trait RestConnector
      * @param string $uri
      * @param $headers
      * @param array $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return array|mixed
      */
     public function get($uri, $headers, $request = [])
     {
@@ -48,21 +49,22 @@ trait RestConnector
                 ["query" => http_build_query($request)]
             );
 
-            return response()->json(
-                json_decode($response->getBody()->getContents()),
-                $response->getStatusCode(),
-                $response->getHeaders()
-            );
+            return json_decode($response->getBody()->getContents(), true);
         } catch (RequestException $exception) {
-            // TODO: dispatch exceptions through a job here
+            Log::error("RestConnector GET Exception: " . $exception->getResponse()->getBody()->getContents());
 
-            return response()->json(
-                json_decode($exception->getResponse()->getBody()->getContents()),
-                $exception->getCode()
-            );
+            return [];
         }
     }
 
+    /**
+     * Implements HTTP POST request via Guzzle
+     *
+     * @param $uri
+     * @param $headers
+     * @param $request
+     * @return array|mixed
+     */
     public function post($uri, $headers, $request)
     {
         $this->guzzleClient = $this->makeClient($headers);
@@ -74,18 +76,11 @@ trait RestConnector
                 ["body" => json_encode($request)]
             );
 
-            return response()->json(
-                json_decode($response->getBody()->getContents()),
-                $response->getStatusCode(),
-                $response->getHeaders()
-            );
+            return json_decode($response->getBody()->getContents(), true);
         } catch (RequestException $exception) {
-            // TODO: catch exception and log
+            Log::error("RestConnector POST Exception: " . $exception->getResponse()->getBody()->getContents());
 
-            return response()->json(
-                json_decode($exception->getResponse()->getBody()->getContents()),
-                $exception->getCode()
-            );
+            return [];
         }
     }
 }
