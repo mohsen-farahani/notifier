@@ -41,8 +41,10 @@ class OneSignalProvider extends PushAbstract
 
             $response = $this->post(
                 PushConfigs::ONESIGNAL_URI,
-                $headers,
-                $request
+                [
+                    "headers" => $headers,
+                    "body" => json_encode($request)
+                ]
             );
 
             $this->updateUserDevicesIfTokensExpired($response);

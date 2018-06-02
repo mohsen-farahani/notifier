@@ -8,42 +8,17 @@ use Illuminate\Support\Facades\Log;
 
 trait RestConnector
 {
-    protected $guzzleClient = null;
-
-    /**
-     * Instantiates a Guzzle HTTP client if not available
-     *
-     * @param array $headers
-     * @return Client|null
-     */
-    private function makeClient($headers = [])
-    {
-        if(!$this->guzzleClient) {
-            $this->guzzleClient = new Client([
-                "headers" => $headers,
-                "default" => [
-                    "verify" => false
-                ]
-            ]);
-        }
-
-        return $this->guzzleClient;
-    }
-
     /**
      * Implements HTTP GET request via Guzzle
      *
      * @param string $uri
-     * @param $headers
      * @param array $request
      * @return array|mixed
      */
-    public function get($uri, $headers, $request = [])
+    public function get($uri, $request = [])
     {
-        $this->guzzleClient = $this->makeClient($headers);
-
         try {
-            $response = $this->guzzleClient->request(
+            $response = (new Client())->request(
                 "GET",
                 $uri,
                 ["query" => http_build_query($request)]
@@ -61,19 +36,16 @@ trait RestConnector
      * Implements HTTP POST request via Guzzle
      *
      * @param $uri
-     * @param $headers
      * @param $request
      * @return array|mixed
      */
-    public function post($uri, $headers, $request)
+    public function post($uri, $request)
     {
-        $this->guzzleClient = $this->makeClient($headers);
-
         try {
-            $response = $this->guzzleClient->request(
+            $response = (new Client())->request(
                 "POST",
                 $uri,
-                ["body" => json_encode($request)]
+                $request
             );
 
             return json_decode($response->getBody()->getContents(), true);
