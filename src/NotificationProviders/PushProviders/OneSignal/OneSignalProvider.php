@@ -14,7 +14,6 @@ class OneSignalProvider extends PushAbstract
     {
         $request = [
             "app_id" => PushConfigs::ONESIGNAL_APP_ID,
-            "include_player_ids" => $player_ids,
             "extra" => $extra,
             "headings" => ["en" => $heading],
             "contents" => ["en" => $content]
@@ -25,12 +24,18 @@ class OneSignalProvider extends PushAbstract
             "Authorization" => "Basic " . PushConfigs::ONESIGNAL_AUTHORIZATION
         ];
 
-        $response = $this->post(
-            PushConfigs::ONESIGNAL_URI,
-            $headers,
-            $request
-        );
+        $player_ids_chunks = array_chunk($player_ids, 2000);
 
-        return $response;
+        foreach($player_ids_chunks as $player_ids) {
+            $request["include_player_ids"] = $player_ids;
+
+            $this->post(
+                PushConfigs::ONESIGNAL_URI,
+                $headers,
+                $request
+            );
+        }
+
+        return true;
     }
 }
