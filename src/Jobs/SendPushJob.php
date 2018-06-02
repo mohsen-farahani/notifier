@@ -24,16 +24,19 @@ class SendPushJob implements ShouldQueue
      * Create a new job instance.
      *
      * @param PushAbstract $pushProvider
-     * @param $request
+     * @param string $heading
+     * @param string $content
+     * @param array $player_ids
+     * @param array $extra
      */
-    public function __construct(PushAbstract $pushProvider, $request)
+    public function __construct(PushAbstract $pushProvider, $heading, $content, $player_ids, $extra = null)
     {
         $this->pushProvider = $pushProvider;
 
-        $this->heading = $request["heading"];
-        $this->content = $request["content"];
-        $this->player_ids = $request["player_ids"];
-        $this->data = $request["extra"];
+        $this->heading = $heading;
+        $this->content = $content;
+        $this->player_ids = $player_ids;
+        $this->data = $extra;
     }
 
     /**

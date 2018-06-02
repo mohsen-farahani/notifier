@@ -9,26 +9,14 @@ use Asanbar\Notifier\NotificationProviders\PushProviders\OneSignal\OneSignalProv
 use Asanbar\Notifier\NotificationProviders\PushProviders\PushAbstract;
 use Illuminate\Http\Request;
 
-class PushController extends Controller
+class Notifier
 {
-    public function send(Request $request)
+    public static function sendPush($heading, $content, $player_ids, $extra)
     {
-        $this->validate($request, [
-            "heading" => "required",
-            "content" => "required",
-            "player_ids" => "required|array",
-            "extra" => "",
-        ]);
-
 //        $pushProvider = PushAbstract::resolve(env("ACTIVE_PUSH_PROVIDER"));
-        $pushProvider = new OneSignalProvider();
 
-        if (!$pushProvider) {
-            return response()->json(Message::PUSH_NOT_SUPPORTED, 404);
-        }
+        dispatch(new SendPushJob(new OneSignalProvider(), $heading, $content, $player_ids, $extra));
 
-        dispatch(new SendPushJob($pushProvider, $request));
-
-        return response()->json(Message::PUSH_REQUEST_REGISTERED, 200);
+        return true;
     }
 }
