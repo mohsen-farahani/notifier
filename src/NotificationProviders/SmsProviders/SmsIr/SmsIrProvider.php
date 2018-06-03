@@ -2,40 +2,47 @@
 
 namespace Asanbar\Notifier\NotificationProviders\SmsProviders\SmsIr;
 
-use Asanbar\Notifier\Constants\SmsConfigs;
 use Asanbar\Notifier\NotificationProviders\SmsProviders\SmsAbstract;
 use Asanbar\Notifier\Traits\RestConnector;
+use Illuminate\Support\Facades\Log;
 
 class SmsIrProvider extends SmsAbstract
 {
     use RestConnector;
 
+    public $send_uri = "http://restfulsms.com/api/MessageSend";
+    public $token_uri = "http://restfulsms.com/api/Token";
+
     public function getToken()
     {
         $request = [
-            "UserApiKey" => SmsConfigs::SMSIR_API_KEY,
-            "SecretKey" => SmsConfigs::SMSIR_SECRET_KEY,
-            "System" => "laravel_v_1_4",
+            "UserApiKey" => config("notifier.sms.smsir.api_key"),
+            "SecretKey" => config("notifier.sms.smsir.secret_key"),
+            "System" => "Notifier",
         ];
 
         $response = $this->post(
-            SmsConfigs::SMSIR_TOKEN,
+            $this->token_uri,
             ["json" => $request]
         );
+
+        $response = json_decode($response->getBody(),true);
 
         if(array_key_exists("TokenKey", $response)) {
             return $response["TokenKey"];
         } else {
+            Log::error("Notifier: Could not get token from SMS.ir");
+
             return false;
         }
     }
 
-    public function send(array $messages, array $numbers, string $datetime = null)
+    public function send(string $message, array $numbers, string $datetime = null)
     {
         $body = [
-            "Messages" => $messages,
+            "Messages" => [$message],
             "MobileNumbers" => $numbers,
-            "LineNumber" => SmsConfigs::SMSIR_LINE_NUMBER,
+            "LineNumber" => config("notifier.sms.smsir.line_number"),
         ];
 
         if($datetime) {
@@ -46,14 +53,16 @@ class SmsIrProvider extends SmsAbstract
             "x-sms-ir-secure-token" => $this->getToken()
         ];
 
-        $this->post(
-            SmsConfigs::SMSIR_URI,
+        $response = $this->post(
+            $this->send_uri,
             [
                 "json" => $body,
                 "headers" => $headers
             ]
         );
 
-        return true;
+        $response = json_decode($response->getBody()->getContents(),true);
+
+        return $response["IsSuccessful"] ?? false;
     }
 }

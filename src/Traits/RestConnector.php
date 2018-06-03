@@ -18,17 +18,18 @@ trait RestConnector
     public function get($uri, $request = [])
     {
         try {
-            $response = (new Client())->request(
+            return (new Client())->request(
                 "GET",
                 $uri,
                 ["query" => http_build_query($request)]
             );
-
-            return json_decode($response->getBody()->getContents(), true);
         } catch (RequestException $exception) {
-            Log::error("RestConnector GET Exception: " . $exception->getResponse()->getBody()->getContents());
+            Log::error("Notifier: RestConnector GET Exception: " . $exception->getResponse()->getBody()->getContents());
 
-            return [];
+            return response()->json(
+                $exception->getMessage(),
+                $exception->getCode()
+            );
         }
     }
 
@@ -42,17 +43,18 @@ trait RestConnector
     public function post($uri, $request)
     {
         try {
-            $response = (new Client())->request(
+            return (new Client())->request(
                 "POST",
                 $uri,
                 $request
             );
-
-            return json_decode($response->getBody()->getContents(), true);
         } catch (RequestException $exception) {
-            Log::error("RestConnector POST Exception: " . $exception->getResponse()->getBody()->getContents());
+            Log::error("Notifier: RestConnector POST Exception: " . $exception->getResponse()->getBody()->getContents());
 
-            return [];
+            return response()->json(
+                $exception->getMessage(),
+                $exception->getCode()
+            );
         }
     }
 }

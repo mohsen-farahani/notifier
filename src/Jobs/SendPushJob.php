@@ -8,12 +8,11 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Asanbar\Notifier\NotificationProviders\PushProviders\PushAbstract;
+use Illuminate\Support\Facades\Log;
 
 class SendPushJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
-    protected $pushProvider;
 
     protected $heading;
     protected $content;
@@ -23,16 +22,13 @@ class SendPushJob implements ShouldQueue
     /**
      * Create a new job instance.
      *
-     * @param PushAbstract $pushProvider
-     * @param string $heading
+     * @param $heading
      * @param string $content
      * @param array $player_ids
      * @param array $extra
      */
-    public function __construct(PushAbstract $pushProvider, $heading, $content, $player_ids, $extra = null)
+    public function __construct($heading, $content, $player_ids, $extra = null)
     {
-        $this->pushProvider = $pushProvider;
-
         $this->heading = $heading;
         $this->content = $content;
         $this->player_ids = $player_ids;
@@ -46,11 +42,40 @@ class SendPushJob implements ShouldQueue
      */
     public function handle()
     {
-        $this->pushProvider->send(
-            $this->heading,
-            $this->content,
-            $this->player_ids,
-            $this->data
-        );
+        $push_providers = explode(",", env("PUSH_PROVIDERS"));
+
+        foreach($push_providers as $push_provider) {
+            $provider = PushAbstract::resolve($push_provider);
+
+            if(!$provider) {
+                continue;
+            }
+
+            $response = $provider->send(
+                $this->heading,
+                $this->content,
+                $this->player_ids,
+                $this->data
+            );
+
+            if($response) {
+                Log::info(
+                    "Notifier: Push sent via " .
+                    strtoupper($push_provider) .
+                    ", Heading: " . $this->heading .
+                    ", Content: " . $this->content .
+                    ", Player Ids: " . implode(",", $this->player_ids)
+                );
+
+                break;
+            }
+
+            Log::warning("Notifier: Sending push failed via " .
+                strtoupper($push_provider) .
+                ", Heading: " . $this->heading .
+                ", Content: " . $this->content .
+                ", Player Ids: " . implode(",", $this->player_ids)
+            );
+        }
     }
 }
