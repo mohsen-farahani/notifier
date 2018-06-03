@@ -28,7 +28,7 @@ class Notifier
 //        $message = request()->get("message");
 //        $numbers = request()->get("numbers");
 //        $datetime = request()->get("datetime");
-
+//
         dispatch(new SendSmsJob($message, $numbers, $datetime));
 
         return true;

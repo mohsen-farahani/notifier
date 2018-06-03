@@ -39,7 +39,15 @@ class SendSmsJob implements ShouldQueue
      */
     public function handle()
     {
-        $sms_providers = explode(",", env("SMS_PROVIDERS"));
+        $sms_config = config("notifier.sms");
+
+        $sms_providers = is_array($sms_config) ? array_keys($sms_config) : null;
+
+        if(!$sms_providers) {
+            Log::error("Notifier: No SMS config available");
+
+            return true;
+        }
 
         foreach($sms_providers as $sms_provider) {
             $provider = SmsAbstract::resolve($sms_provider);

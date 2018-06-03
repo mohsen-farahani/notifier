@@ -38,11 +38,19 @@ class SendPushJob implements ShouldQueue
     /**
      * Execute the job.
      *
-     * @return void
+     * @return bool
      */
     public function handle()
     {
-        $push_providers = explode(",", env("PUSH_PROVIDERS"));
+        $push_config = config("notifier.push");
+
+        $push_providers = is_array($push_config) ? array_keys($push_config) : null;
+
+        if(!$push_providers) {
+            Log::error("Notifier: No push config available");
+
+            return true;
+        }
 
         foreach($push_providers as $push_provider) {
             $provider = PushAbstract::resolve($push_provider);
