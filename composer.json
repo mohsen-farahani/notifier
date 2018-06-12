@@ -1,0 +1,26 @@
+{
+    "name": "asanbar/notifier",
+    "require": {
+        "guzzlehttp/guzzle": "^6.3",
+        "predis/predis": "^1.1"
+    },
+    "authors": [
+        {
+            "name": "mehrud",
+            "email": "aladini@asanbar.ir"
+        }
+    ],
+    "minimum-stability": "stable",
+    "autoload": {
+        "psr-4": {
+            "Asanbar\\Notifier\\": "src"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Asanbar\\Notifier\\NotifierServiceProvider"
+            ]
+        }
+    }
+}
