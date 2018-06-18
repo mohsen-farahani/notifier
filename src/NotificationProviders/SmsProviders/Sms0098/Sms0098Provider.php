@@ -11,15 +11,25 @@ class Sms0098Provider extends SmsAbstract
 
     public $send_uri = "http://www.0098sms.com/sendsmslink.aspx";
     public $domain = "0098";
+    public $from;
+    protected $username;
+    protected $password;
+
+    public function __construct()
+    {
+        $this->from = config("notifier.sms.sms0098.from");
+        $this->username = config("notifier.sms.sms0098.username");
+        $this->password = config("notifier.sms.sms0098.password");
+    }
 
     public function send(string $message, array $numbers, string $datetime = null)
     {
         $query = [
-            "FROM" => config("notifier.sms.sms0098.from"),
+            "FROM" => $this->from,
             "TO" => reset($numbers),
             "TEXT" => $message,
-            "USERNAME" => config("notifier.sms.sms0098.username"),
-            "PASSWORD" => config("notifier.sms.sms0098.password"),
+            "USERNAME" => $this->username,
+            "PASSWORD" => $this->password,
             "DOMAIN" => $this->domain,
         ];
 
@@ -28,12 +38,14 @@ class Sms0098Provider extends SmsAbstract
             $query
         );
 
-        $response = substr(trim($response->getBody()->getContents()),0,1);
-
-        if($response == 0) {
-            return true;
+        if(substr(trim($response->getBody()->getContents()),0,1) == 0) {
+            $result["result_id"] = 0;
+            $result["errors"] = null;
         } else {
-            return false;
+            $result["result_id"] = null;
+            $result["errors"] = [substr(trim($response->getBody()->getContents()),0,2)];
         }
+
+        return $result;
     }
 }

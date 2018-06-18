@@ -10,14 +10,26 @@ class SmsirProvider extends SmsAbstract
 {
     use RestConnector;
 
-    public $send_uri = "http://restfulsms.com/api/MessageSend";
-    public $token_uri = "http://restfulsms.com/api/Token";
+    public $send_uri;
+    public $token_uri;
+    protected $user_api_key;
+    protected $secret_key;
+    public $from;
+
+    public function __construct()
+    {
+        $this->send_uri = "http://restfulsms.com/api/MessageSend";
+        $this->token_uri = "http://restfulsms.com/api/Token";
+        $this->user_api_key = config("notifier.sms.smsir.api_key");
+        $this->secret_key = config("notifier.sms.smsir.secret_key");
+        $this->from = config("notifier.sms.smsir.line_number");
+    }
 
     public function getToken()
     {
         $request = [
-            "UserApiKey" => config("notifier.sms.smsir.api_key"),
-            "SecretKey" => config("notifier.sms.smsir.secret_key"),
+            "UserApiKey" => $this->user_api_key,
+            "SecretKey" => $this->secret_key,
             "System" => "Notifier",
         ];
 
@@ -42,7 +54,7 @@ class SmsirProvider extends SmsAbstract
         $body = [
             "Messages" => [$message],
             "MobileNumbers" => $numbers,
-            "LineNumber" => config("notifier.sms.smsir.line_number"),
+            "LineNumber" => $this->from,
         ];
 
         if($datetime) {
@@ -63,6 +75,14 @@ class SmsirProvider extends SmsAbstract
 
         $response = json_decode($response->getBody()->getContents(),true);
 
-        return $response["IsSuccessful"] ?? false;
+        if($response["IsSuccessful"] == true) {
+            $result["result_id"] = $response["BatchKey"];
+            $result["errors"] = null;
+        } else {
+            $result["result_id"] = null;
+            $result["errors"] = $response["Message"];
+        }
+
+        return $result;
     }
 }

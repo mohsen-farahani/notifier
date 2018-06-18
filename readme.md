@@ -16,6 +16,11 @@ Publish the Notifier config file to your application and fill out configurations
 php artisan vendor:publish
 ```
 
+Run the migration command to create notifiers schemas:
+```$xslt
+php artisan migrate
+```
+
 Add the following environments to your application `.env` in comma-separated order in order to set the priority of providers in notify job:
 ```$xslt
 SMS_PROVIDERS_PRIORITY=sms0098,smsir

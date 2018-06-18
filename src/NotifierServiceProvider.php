@@ -13,11 +13,15 @@ class NotifierServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        include __DIR__ . "/routes/web.php";
+        $current_dir = __DIR__;
+
+        include $current_dir . "/routes/web.php";
 
         $this->publishes([
-            __DIR__ . "/config/notifier.php" => config_path("notifier.php")
+            $current_dir . "/config/notifier.php" => config_path("notifier.php")
         ]);
+
+        $this->loadMigrationsFrom($current_dir . "/migrations");
     }
 
     /**

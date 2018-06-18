@@ -4,6 +4,8 @@ namespace Asanbar\Notifier\NotificationProviders\SmsProviders;
 
 abstract class SmsAbstract implements SmsInterface
 {
+    public $from;
+
     abstract function send(string $message, array $numbers, string $datetime = null);
 
     public static final function resolve(string $provider)

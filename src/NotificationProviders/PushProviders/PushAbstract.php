@@ -11,14 +11,18 @@ abstract class PushAbstract implements PushInterface
 
     public static final function resolve($provider)
     {
-        $provider_class = sprintf("%s%s%s%s%s",
-            "Asanbar\\Notifier\\NotificationProviders\\PushProviders\\",
-            ucwords($provider),
-            "\\",
-            ucwords($provider),
-            "Provider"
-        );
+        try {
+            $provider_class = sprintf("%s%s%s%s%s",
+                "Asanbar\\Notifier\\NotificationProviders\\PushProviders\\",
+                ucwords($provider),
+                "\\",
+                ucwords($provider),
+                "Provider"
+            );
 
-        return new $provider_class;
+            return new $provider_class;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 }

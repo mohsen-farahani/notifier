@@ -2,17 +2,17 @@
 
 namespace Asanbar\Notifier\Jobs;
 
+use Asanbar\Notifier\Traits\PushTrait;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Asanbar\Notifier\NotificationProviders\PushProviders\PushAbstract;
-use Illuminate\Support\Facades\Log;
 
 class SendPushJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use PushTrait;
 
     protected $heading;
     protected $content;
@@ -38,50 +38,10 @@ class SendPushJob implements ShouldQueue
     /**
      * Execute the job.
      *
-     * @return bool
+     * @return void
      */
     public function handle()
     {
-        $push_providers_priority = explode(",", env("PUSH_PROVIDERS_PRIORITY"));
-
-        if(!$push_providers_priority) {
-            Log::error("Notifier: No PUSH_PROVIDERS_PRIORITY env available");
-
-            return true;
-        }
-
-        foreach($push_providers_priority as $push_provider) {
-            $provider = PushAbstract::resolve($push_provider);
-
-            if(!$provider) {
-                continue;
-            }
-
-            $response = $provider->send(
-                $this->heading,
-                $this->content,
-                $this->player_ids,
-                $this->data
-            );
-
-            if($response) {
-                Log::info(
-                    "Notifier: Push sent via " .
-                    strtoupper($push_provider) .
-                    ", Heading: " . $this->heading .
-                    ", Content: " . $this->content .
-                    ", Player Ids: " . implode(",", $this->player_ids)
-                );
-
-                break;
-            }
-
-            Log::warning("Notifier: Sending push failed via " .
-                strtoupper($push_provider) .
-                ", Heading: " . $this->heading .
-                ", Content: " . $this->content .
-                ", Player Ids: " . implode(",", $this->player_ids)
-            );
-        }
+        $this->sendPush();
     }
 }
