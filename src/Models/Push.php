@@ -20,6 +20,11 @@ class Push extends Model
         "description",
     ];
 
+    protected $casts = [
+        "extra" => "array",
+        "description" => "array"
+    ];
+
     const STATUS_SENT = "sent";
     const STATUS_SEND_FAILED = "send-failed";
     const STATUS_SEEN = "seen";
@@ -75,5 +80,20 @@ class Push extends Model
             self::STATUS_SEND_FAILED,
             $description
         );
+    }
+
+    public static function getPushes(array $player_ids, string $extra_field = null, array $extra_values = null)
+    {
+        $query = self::whereIn("player_id", $player_ids);
+
+        if($extra_field) {
+            $query->where(function($query) use ($extra_field, $extra_values) {
+                foreach($extra_values as $extra_value) {
+                    $query->orWhereRaw(sprintf('JSON_CONTAINS(extra, \'{"%s": "%s"}\')', $extra_field, $extra_value));
+                }
+            });
+        }
+
+        return $query;
     }
 }

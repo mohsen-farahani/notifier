@@ -70,4 +70,9 @@ class Sms extends Model
           $description
         );
     }
+
+    public static function getSmses($numbers)
+    {
+        return self::whereIn("to", $numbers);
+    }
 }
