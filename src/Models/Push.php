@@ -25,6 +25,14 @@ class Push extends Model
         "description" => "array"
     ];
 
+    protected $hidden = [
+        "provider",
+        "result_id",
+        "status",
+        "description",
+        "updated_at",
+    ];
+
     const STATUS_SENT = "sent";
     const STATUS_SEND_FAILED = "send-failed";
     const STATUS_SEEN = "seen";
