@@ -52,6 +52,8 @@ class NotifierController extends Controller
     {
         $this->validate($request, [
             "player_ids" => "required|array",
+            "from_datetime" => "",
+            "to_datetime" => "",
             "extra_field" => "required_with:extra_values",
             "extra_values" => "required_with:extra_field|array",
         ]);
@@ -59,6 +61,8 @@ class NotifierController extends Controller
         return response()->json(
             Notifier::getPushes(
                 $request["player_ids"],
+                $request["from_datetime"],
+                $request["to_datetime"],
                 $request["extra_field"],
                 $request["extra_values"]
             )->paginate(config("notifier.pagination.per_page")),

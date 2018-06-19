@@ -82,9 +82,18 @@ class Push extends Model
         );
     }
 
-    public static function getPushes(array $player_ids, string $extra_field = null, array $extra_values = null)
+    public static function getPushes(array $player_ids, string $from_datetime = null, string $to_datetime = null,
+                                     string $extra_field = null, array $extra_values = null)
     {
         $query = self::whereIn("player_id", $player_ids);
+
+        if($from_datetime) {
+            $query->where("created_at", ">=", $from_datetime);
+        }
+
+        if($to_datetime) {
+            $query->where("updated_at", "<", $to_datetime);
+        }
 
         if($extra_field) {
             $query->where(function($query) use ($extra_field, $extra_values) {

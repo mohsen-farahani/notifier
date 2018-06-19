@@ -24,10 +24,13 @@ class Notifier
         return true;
     }
 
-    public static function getPushes($player_ids, $extra_field = null, array $extra_values = null)
+    public static function getPushes($player_ids, string $from_datetime = null, string $to_datetime = null,
+                                     $extra_field = null, array $extra_values = null)
     {
         return Push::getPushes(
             $player_ids,
+            $from_datetime,
+            $to_datetime,
             $extra_field,
             $extra_values
         );
