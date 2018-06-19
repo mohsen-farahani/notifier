@@ -21,7 +21,7 @@ class NotifierServiceProvider extends ServiceProvider
             $current_dir . "/config/notifier.php" => config_path("notifier.php")
         ]);
 
-        $this->loadMigrationsFrom($current_dir . "/database/migrations");
+        $this->loadMigrationsFrom($current_dir . "/../database/migrations");
     }
 
     /**
