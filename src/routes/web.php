@@ -9,3 +9,9 @@ Route::group(["prefix" => "smses"], function() {
     Route::post("/", "Asanbar\Notifier\Controllers\NotifierController@sendSms");
     Route::get("/", "Asanbar\Notifier\Controllers\NotifierController@getSmses");
 });
+
+Route::group(["prefix" => "messages"], function() {
+   Route::post("/", "Asanbar\Notifier\Controllers\NotifierController@sendMessage");
+   Route::get("/", "Asanbar\Notifier\Controllers\NotifierController@getMessages");
+   Route::put("/", "Asanbar\Notifier\Controllers\NotifierController@updateSeenMessages");
+});

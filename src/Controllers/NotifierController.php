@@ -48,6 +48,26 @@ class NotifierController extends Controller
         );
     }
 
+    public function sendMessage(Request $request)
+    {
+        $this->validate($request, [
+            "title" => "required",
+            "body" => "required",
+            "user_ids" => "required|array"
+        ]);
+
+        Notifier::sendMessage(
+            $request["title"],
+            $request["body"],
+            $request["user_ids"]
+        );
+
+        return response()->json(
+            "",
+            204
+        );
+    }
+
     public function getPushes(Request $request)
     {
         $this->validate($request, [
@@ -80,6 +100,32 @@ class NotifierController extends Controller
             Notifier::getSmses($request["numbers"])
                 ->paginate(config("notifier.pagination.per_page")),
             200
+        );
+    }
+
+    public function getMessages(Request $request)
+    {
+        $this->validate($request, [
+            "user_ids" => "required|array",
+            "status" => ""
+        ]);
+
+        return response()->json(
+            Notifier::getMessages($request["user_ids"], $request["status"])
+                ->paginate(config("notifier.pagination.per_page")),
+            200
+        );
+    }
+
+    public function updateSeenMessages(Request $request)
+    {
+        $this->validate($request, [
+            "message_ids" => "required|array",
+        ]);
+
+        return response()->json(
+            Notifier::updateSeenMessages($request["message_ids"]),
+            204
         );
     }
 }

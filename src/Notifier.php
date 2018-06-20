@@ -2,11 +2,12 @@
 
 namespace Asanbar\Notifier;
 
+use Asanbar\Notifier\Jobs\SendMessageJob;
 use Asanbar\Notifier\Jobs\SendPushJob;
 use Asanbar\Notifier\Jobs\SendSmsJob;
+use Asanbar\Notifier\Models\Message;
 use Asanbar\Notifier\Models\Push;
 use Asanbar\Notifier\Models\Sms;
-use Illuminate\Http\Request;
 
 class Notifier
 {
@@ -24,6 +25,11 @@ class Notifier
         return true;
     }
 
+    public static function sendMessage(string $title, string $body, array $user_ids)
+    {
+        dispatch(new SendMessageJob($title, $body, $user_ids));
+    }
+
     public static function getPushes($player_ids, string $from_datetime = null, string $to_datetime = null,
                                      $extra_field = null, array $extra_values = null)
     {
@@ -39,5 +45,25 @@ class Notifier
     public static function getSmses(array $numbers)
     {
         return Sms::getSmses($numbers);
+    }
+
+    public static function getMessages(array $user_ids, string $status = null)
+    {
+        return Message::getMessages($user_ids, $status);
+    }
+
+    public static function getSeenMessages(array $user_ids)
+    {
+        return Message::getSeenMessages($user_ids);
+    }
+
+    public static function getSentMessages(array $user_ids)
+    {
+        return Message::getSentMessages($user_ids);
+    }
+
+    public static function updateSeenMessages(array $message_ids)
+    {
+        return Message::updateSeenMessages($message_ids);
     }
 }

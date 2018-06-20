@@ -24,6 +24,11 @@ return [
 
     ],
 
+    //Message Configs
+    "message" => [
+        "database" => []
+    ],
+
     //Pagination Configs
     "pagination" => [
         "per_page" => env("PAGINATION_PER_PAGE", 20),
