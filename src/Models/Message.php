@@ -26,7 +26,6 @@ class Message extends Model
     protected $hidden = [
         "provider",
         "result_id",
-        "status",
         "description",
         "updated_at",
     ];
