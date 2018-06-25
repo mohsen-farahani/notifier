@@ -6,7 +6,7 @@ Notifier is a notifications service package which handles the process of sending
 
 Install the package via Packagist:
 ```$xslt
-composer rerquire asanbar/notifier
+composer require asanbar/notifier
 ```
 
 ## Configuration
