@@ -26,7 +26,7 @@ class OnesignalProvider extends PushAbstract
     {
         $request = [
             "app_id" => config("notifier.push.onesignal.app_id"),
-            "extra" => $extra,
+            "data" => $extra,
             "headings" => ["en" => $heading],
             "contents" => ["en" => $content]
         ];
