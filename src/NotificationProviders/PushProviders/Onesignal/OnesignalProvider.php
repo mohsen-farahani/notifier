@@ -5,7 +5,9 @@ namespace Asanbar\Notifier\NotificationProviders\PushProviders\Onesignal;
 use Asanbar\Notifier\Constants\PushConfigs;
 use Asanbar\Notifier\NotificationProviders\PushProviders\PushAbstract;
 use Asanbar\Notifier\Traits\RestConnector;
+use Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class OnesignalProvider extends PushAbstract
 {
@@ -26,7 +28,7 @@ class OnesignalProvider extends PushAbstract
     {
         $request = [
             "app_id" => config("notifier.push.onesignal.app_id"),
-            "extra" => $extra,
+            "data" => $extra,
             "headings" => ["en" => $heading],
             "contents" => ["en" => $content]
         ];
@@ -38,15 +40,19 @@ class OnesignalProvider extends PushAbstract
 
         $request["include_player_ids"] = $player_ids;
 
-        $response = $this->post(
-            $this->send_uri,
-            [
-                "headers" => $headers,
-                "body" => json_encode($request)
-            ]
-        );
+        try {
+            $response = $this->post(
+                $this->send_uri,
+                [
+                    "headers" => $headers,
+                    "body" => json_encode($request)
+                ]
+            );
 
-        $response = json_decode($response->getBody()->getContents(), true);
+            $response = json_decode($response->getBody()->getContents(), true);
+        } catch (Exception $exception) {
+            Log::debug('onesignal.error', $exception->getTrace());
+        }
 
         // This code should be omitted & not handled inside the package!
         $this->updateUserDevicesIfTokensExpired($response);
@@ -72,9 +78,9 @@ class OnesignalProvider extends PushAbstract
 
                 try {
                     DB::table("users_devices")
-                        ->whereIn("one_signal_token", $invalid_player_ids)
-                        ->update(["logout" => 1]);
-                } catch(\Exception $e) {
+                      ->whereIn("one_signal_token", $invalid_player_ids)
+                      ->update(["logout" => 1]);
+                } catch(Exception $e) {
                     //
                 }
             }
