@@ -23,8 +23,8 @@ class NotifierServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        include __DIR__ . "/routes/web.php";
+        include_once __DIR__ . "/routes/web.php";
 
-        include __DIR__ . "/Notifier.php";
+        include_once __DIR__ . "/Notifier.php";
     }
 }
