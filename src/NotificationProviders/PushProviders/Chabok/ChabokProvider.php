@@ -19,7 +19,7 @@ class ChabokProvider extends PushAbstract
      * @param null $extra
      * @return array
      */
-    public function send(string $content, string $heading, array $player_ids, $extra = null) : array
+    public function send(string $content, string $heading, array $player_ids, $extra = null) : bool
     {
 
         $message = $this->getMessage($content, $heading, $extra);
@@ -27,28 +27,18 @@ class ChabokProvider extends PushAbstract
 
         $uri = $this->getUri();
         
-        $message["user"] = $player_ids;
-
-        try {
-            $response = $this->post(
-                    $uri,
-                    [
-                        'headers' => $headers,
-                        'body' => json_encode($message)
-                    ]
-                );
-
-            $response = json_decode($response->getBody()->getContents(), true);
-            
-        } catch (Exception $exception) {
-            Log::debug('chabok.error', $exception->getTrace());
+        foreach ($player_ids as $player_id) {
+            $message["user"] = $player_id;
+            $this->post(
+                $uri,
+                [
+                    'headers' => $headers,
+                    'body' => json_encode($message)
+                ]
+            );
         }
-
-
-        $result["result_id"] = $response["id"] ?? null;
-        $result["errors"] = $response["errors"] ?? null;
-
-        return $result;
+        
+        return true;
     }
 
 
