@@ -38,11 +38,14 @@ class ChabokProvider extends PushAbstract
                 ]
             );
 
-            $result["result_id"] = $response["id"];
-            $result["errors"] = $response["errors"] ?? null;
+            $response = json_decode($response->getBody()->getContents(), true);
+            $result[] = $response[0];
 
         }
 
+        $result['result_id'] = time();
+        $result['error'] = [];
+        
         return $result;
        
     }
