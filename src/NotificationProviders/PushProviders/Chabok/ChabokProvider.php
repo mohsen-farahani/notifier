@@ -21,33 +21,30 @@ class ChabokProvider extends PushAbstract
      */
     public function send(string $content, string $heading, array $player_ids, $extra = null) : array
     {
-
-        $message = $this->getMessage($content, $heading, $extra);
+        $messages = [];
         $headers = $this->getHeaders();
 
-        $uri = $this->getUri();
-
-        
-        foreach ($player_ids as $player_id) {
-            $message["user"] = $player_id;
-            $response = $this->post(
-                $uri,
-                [
-                    'headers' => $headers,
-                    'body' => json_encode($message)
-                ]
-            );
-
-            $response = json_decode($response->getBody()->getContents(), true);
-            $result[] = $response[0];
-
+        foreach ($player_ids as $key => $player_id) {
+            $messages[$key] = $this->getMessage($content, $heading, $extra);
+            $messages[$key]["user"] = $player_id;
         }
 
+        $response = $this->post(
+            $this->getUri(),
+            [
+                'headers' => $headers,
+                'body' => json_encode($messages)
+            ]
+        );
+
+        $response = json_decode($response->getBody()->getContents(), true);
+        
+        $result = $response[0];
         $result['result_id'] = time();
         $result['error'] = [];
-        
+
         return $result;
-       
+
     }
 
 
