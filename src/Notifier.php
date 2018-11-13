@@ -17,21 +17,21 @@ class Notifier
 
     public static function sendPush(string $heading, string $content, array $player_ids, array $extra = NULL)
     {
-        dispatch((new SendPushJob($heading, $content, $player_ids, $extra, self::$expire_at, self::$options))->onQueue('sendPush'));
+        dispatch((new SendPushJob($heading, $content, $player_ids, $extra, self::$expire_at, self::$options))->onQueue('push'));
 
         return TRUE;
     }
 
     public static function sendSms(string $message, array $numbers)
     {
-        dispatch((new SendSmsJob($message, $numbers, self::$expire_at, self::$options))->onQueue('sendSms'));
+        dispatch((new SendSmsJob($message, $numbers, self::$expire_at, self::$options))->onQueue('sms'));
 
         return TRUE;
     }
 
     public static function sendMessage(string $title, string $body, array $user_ids)
     {
-        dispatch((new SendMessageJob($title, $body, $user_ids, self::$expire_at, self::$options))->onQueue('SendMessageJob'));
+        dispatch((new SendMessageJob($title, $body, $user_ids, self::$expire_at, self::$options))->onQueue('message'));
 
         return TRUE;
     }
