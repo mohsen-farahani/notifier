@@ -2,7 +2,7 @@
 
 namespace Asanbar\Notifier\Jobs;
 
-use Asanbar\Notifier\Traits\PushTrait;
+use Asanbar\Notifier\NotificationService\NotifyService;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,35 +13,29 @@ use Illuminate\Queue\SerializesModels;
 class SendPushJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-    use PushTrait;
 
-    private $heading;
-    private $content;
-    private $player_ids;
+    private $title;
+    private $description;
+    private $tokens;
     private $extra;
-    private $expire_at;
-    private $expire_at_carbon;
-    private $options;
+    private $expireAt;
 
     /**
      * Create a new job instance.
      *
-     * @param string $heading
-     * @param string $content
-     * @param array $player_ids
-     * @param array $extra
-     * @param int $expire_at
-     * @param array $options
+     * @param string $title
+     * @param string $description
+     * @param array $tokens
+     * @param array|null $extra
+     * @param Carbon|null $expireAt
      */
-    public function __construct(string $heading, string $content, array $player_ids, array $extra = NULL, int $expire_at = 0, array $options = [])
+    public function __construct(string $title, string $description, array $tokens, ?array $extra = null, ?Carbon $expireAt = null)
     {
-        $this->heading          = $heading;
-        $this->content          = $content;
-        $this->player_ids       = $player_ids;
-        $this->extra            = $extra;
-        $this->expire_at        = $expire_at;
-        $this->expire_at_carbon = $expire_at > 0 ? Carbon::now()->addSeconds($expire_at) : 0;
-        $this->options          = $options;
+        $this->title       = $title;
+        $this->description = $description;
+        $this->tokens      = $tokens;
+        $this->extra       = $extra;
+        $this->expireAt    = $expireAt;
     }
 
     /**
@@ -51,8 +45,15 @@ class SendPushJob implements ShouldQueue
      */
     public function handle()
     {
-        if ($this->expire_at === 0 || !Carbon::now()->gt($this->expire_at_carbon)) { //if expire_at is zero or now not greater than expire_at
-            $this->sendPush();
+        if ($this->expireAt === null || !Carbon::now()->gt($this->expireAt)) { //if expireAt is zero or now not greater than expireAt
+            $notifier = app(NotifyService::class);
+
+            $notifier->setTitle($this->title)
+                ->setBody($this->description)
+                ->recievers($this->tokens)
+                ->setExpireAt($this->expireAt)
+                ->sendNotification('push');
+
         }
     }
 }

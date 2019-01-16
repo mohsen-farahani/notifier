@@ -2,7 +2,6 @@
 
 namespace Asanbar\Notifier\Jobs;
 
-use Asanbar\Notifier\Traits\MessageTrait;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,7 +12,6 @@ use Illuminate\Queue\SerializesModels;
 class SendMessageJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-    use MessageTrait;
 
     private $title;
     private $body;

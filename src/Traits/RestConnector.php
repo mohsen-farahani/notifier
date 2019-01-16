@@ -1,6 +1,6 @@
 <?php
 
-namespace AsanBar\Notifier\Traits;
+namespace Asanbar\Notifier\Traits;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;

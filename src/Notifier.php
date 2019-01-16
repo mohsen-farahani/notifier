@@ -5,81 +5,163 @@ namespace Asanbar\Notifier;
 use Asanbar\Notifier\Jobs\SendMessageJob;
 use Asanbar\Notifier\Jobs\SendPushJob;
 use Asanbar\Notifier\Jobs\SendSmsJob;
-use Asanbar\Notifier\Models\Message;
-use Asanbar\Notifier\Models\Push;
-use Asanbar\Notifier\Models\Sms;
+use Asanbar\Notifier\NotificationService\NotifyService;
+use Carbon\Carbon;
 
 class Notifier
 {
-    private static $expire_at = 0;
+    /** @var Carbon expire at */
+    private static $expireAt = null;
 
-    private static $options = [];
+    /** @var string queue name */
+    private static $queueName = null;
 
-    public static function sendPush(string $heading, string $content, array $player_ids, array $extra = NULL)
+    /**
+     * static set queue name function
+     *
+     * @param string $queueName
+     * @return void
+     */
+    public static function onQueue(string $queueName)
     {
-        dispatch((new SendPushJob($heading, $content, $player_ids, $extra, self::$expire_at, self::$options))->onQueue('push'));
-
-        return TRUE;
+        self::$queueName = $queueName;
     }
 
-    public static function sendSms(string $message, array $numbers)
+    /**
+     * static send push function
+     *
+     * @param string $title
+     * @param string $description
+     * @param array $receivers
+     * @param array $extraData
+     * @return void
+     */
+    public static function sendPush(string $title, string $description, array $receivers, array $extraData = null)
     {
-        dispatch((new SendSmsJob($message, $numbers, self::$expire_at, self::$options))->onQueue('sms'));
+        self::saveLog('push', $receivers, $description, $title);
 
-        return TRUE;
+        if (
+            self::$queueName === null
+            &&
+            (self::$expireAt === null || !Carbon::now()->gt(self::$expireAt))
+        ) { //if expireAt is zero or now not greater than expireAt
+            $notifier = app(NotifyService::class);
+
+            $result = $notifier->setTitle($title)
+                ->setBody($description)
+                ->recievers($receivers)
+                ->setExpireAt(self::$expireAt)
+                ->sendNotification('push');
+
+            self::updateLog('sms', $result);
+
+            return $result;
+        }
+
+        return dispatch((new SendPushJob($title, $description, $receivers, $extraData, self::$expireAt))->onQueue(self::$queueName));
+    }
+
+    /**
+     * static send sms function
+     *
+     * @param string $message
+     * @param array $numbers
+     * @return void
+     */
+    public static function sendSMS(string $message, array $numbers)
+    {
+        self::saveLog('sms', $numbers, $message);
+
+        if (
+            self::$queueName === null
+            && (self::$expireAt === null || !Carbon::now()->gt(self::$expireAt))
+        ) { //if expireAt is zero or now not greater than expireAt
+            $notifier = app(NotifyService::class);
+
+            $result = $notifier->setBody($description)
+                ->recievers($numbers)
+                ->setExpireAt(self::$expireAt)
+                ->sendNotification('sms');
+
+            self::updateLog('sms', $result);
+
+            return $result;
+
+        }
+
+        dispatch((new SendSmsJob($message, $numbers, self::$expireAt))->onQueue(self::$queueName));
+
+        return true;
     }
 
     public static function sendMessage(string $title, string $body, array $user_ids)
     {
-        dispatch((new SendMessageJob($title, $body, $user_ids, self::$expire_at, self::$options))->onQueue('message'));
+        //TODO: it should compatible with new structure ...
+        dispatch((new SendMessageJob($title, $body, $user_ids, self::$expireAt))->onQueue('message'));
 
-        return TRUE;
+        return true;
     }
 
-    public static function setExpireAt($expire_at)
+    /**
+     * static setr expire at function
+     *
+     * @param Carbon $expireAt
+     * @return void
+     */
+    public static function setExpireAt(Carbon $expireAt)
     {
-        self::$expire_at = $expire_at;
+        self::$expireAt = $expireAt;
     }
 
-    public static function options(array $options = [])
+    /**
+     * save notification log function
+     *
+     * @param string $type
+     * @param array $recievers
+     * @param string $body
+     * @param string|null $title
+     * @return boolean
+     */
+    private static function saveLog(string $type, array $recievers, string $body, ?string $title = null): bool
     {
-        self::$options = $options;
+        foreach ($recievers as $identifier) {
+            $data[] = [
+                'identifier' => $identifier,
+                'title'      => $title,
+                'body'       => trim($body),
+                'type'       => ($type == 'sms' ? 0 : 1),
+                'expire_at'  => self::$expireAt,
+                'queued_at'  => date('Y-m-d H:i:s'),
+                'try'        => 0,
+                'created_at' => date('Y-m-d H:i:s'),
+            ];
+        }
+
+        return \DB::table('notifications')->insert($data);
     }
 
-    public static function getPushes($player_ids, string $from_datetime = NULL, string $to_datetime = NULL,
-                                     $extra_field = NULL, array $extra_values = NULL)
+    /**
+     * update notification log function
+     *
+     * @param string $type
+     * @param array $result
+     * @return void
+     */
+    private static function updateLog(string $type, array $result)
     {
-        return Push::getPushes(
-            $player_ids,
-            $from_datetime,
-            $to_datetime,
-            $extra_field,
-            $extra_values
-        );
-    }
+        $notifications = Notification::whereIn('identifier', $this->numbers)
+            ->where('body', trim($this->message))
+            ->where('type', ($type == 'sms' ? 0 : 1))
+            ->get();
 
-    public static function getSmses(array $numbers)
-    {
-        return Sms::getSmses($numbers);
-    }
+        foreach ($notifications as $notification) {
+            $sendResult = $result['detail'][$notification->identifier];
 
-    public static function getMessages(array $user_ids, string $status = NULL)
-    {
-        return Message::getMessages($user_ids, $status);
-    }
-
-    public static function getSeenMessages(array $user_ids)
-    {
-        return Message::getSeenMessages($user_ids);
-    }
-
-    public static function getSentMessages(array $user_ids)
-    {
-        return Message::getSentMessages($user_ids);
-    }
-
-    public static function updateSeenMessages(array $message_ids)
-    {
-        return Message::updateSeenMessages($message_ids);
+            $notification->provider_name = $sendResult['provider'];
+            $notification->success_at    = ($sendResult['success'] ? date('Y-m-d H:i:s') : null);
+            $notification->try++;
+            $notification->error = (!$sendResult['success'] ? $sendResult['response'] : null);
+            $notification->update();
+        }
     }
 }

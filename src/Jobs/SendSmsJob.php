@@ -2,7 +2,7 @@
 
 namespace Asanbar\Notifier\Jobs;
 
-use Asanbar\Notifier\Traits\SmsTrait;
+use Asanbar\Notifier\NotificationService\NotifyService;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,30 +13,24 @@ use Illuminate\Queue\SerializesModels;
 class SendSmsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-    use SmsTrait;
 
     private $message;
     private $numbers;
-    private $datetime;
-    private $expire_at;
-    private $expire_at_carbon;
-    private $options;
+    private $expireAt;
 
     /**
      * Create a new job instance.
      *
      * @param string $message
      * @param array $numbers
-     * @param int $expire_at
+     * @param Carbon|null $expireAt
      * @param array $options
      */
-    public function __construct(string $message, array $numbers, int $expire_at = 0, array $options = [])
+    public function __construct(string $message, array $numbers, ?Carbon $expireAt = null)
     {
-        $this->message          = $message;
-        $this->numbers          = $numbers;
-        $this->expire_at        = $expire_at;
-        $this->expire_at_carbon = $expire_at > 0 ? Carbon::now()->addSeconds($expire_at) : 0;
-        $this->options          = $options;
+        $this->message  = $message;
+        $this->numbers  = $numbers;
+        $this->expireAt = $expireAt;
     }
 
     /**
@@ -46,8 +40,13 @@ class SendSmsJob implements ShouldQueue
      */
     public function handle()
     {
-        if ($this->expire_at === 0 || !Carbon::now()->gt($this->expire_at_carbon)) { //if expire_at is zero or now not greater than expire_at
-            $this->sendSms();
+
+        if ($this->expireAt === null || !Carbon::now()->gt($this->expireAt)) { //if expireAt is zero or now not greater than expireAt
+            $notifier = app(NotifyService::class);
+
+            $notifier->setBody($this->message)
+                ->recievers($this->numbers)
+                ->sendNotification('sms');
         }
     }
 }

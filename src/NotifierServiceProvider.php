@@ -15,10 +15,8 @@ class NotifierServiceProvider extends ServiceProvider
     {
         $current_dir = __DIR__;
 
-        include_once $current_dir . "/routes/web.php";
-
         $this->publishes([
-            $current_dir . "/config/notifier.php" => config_path("notifier.php")
+            $current_dir . "/config/notifier.php" => config_path("notifier.php"),
         ]);
 
         $this->loadMigrationsFrom($current_dir . "/../database/migrations");
