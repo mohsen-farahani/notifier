@@ -53,7 +53,7 @@ class Notifier
                 ->setExpireAt(self::$expireAt)
                 ->sendNotification('push');
 
-            self::updateLog('sms', $result);
+            self::updateLog('sms', $result, $receivers);
 
             return $result;
         }
@@ -65,12 +65,12 @@ class Notifier
      * static send sms function
      *
      * @param string $message
-     * @param array $numbers
+     * @param array $receivers
      * @return void
      */
-    public static function sendSMS(string $message, array $numbers)
+    public static function sendSMS(string $message, array $receivers)
     {
-        self::saveLog('sms', $numbers, $message);
+        self::saveLog('sms', $receivers, $message);
 
         if (
             self::$queueName === null
@@ -79,17 +79,17 @@ class Notifier
             $notifier = app(NotifyService::class);
 
             $result = $notifier->setBody($description)
-                ->recievers($numbers)
+                ->recievers($receivers)
                 ->setExpireAt(self::$expireAt)
                 ->sendNotification('sms');
 
-            self::updateLog('sms', $result);
+            self::updateLog('sms', $result, $receivers);
 
             return $result;
 
         }
 
-        dispatch((new SendSmsJob($message, $numbers, self::$expireAt))->onQueue(self::$queueName));
+        dispatch((new SendSmsJob($message, $receivers, self::$expireAt))->onQueue(self::$queueName));
 
         return true;
     }
@@ -124,8 +124,9 @@ class Notifier
      */
     private static function saveLog(string $type, array $recievers, string $body, ?string $title = null): bool
     {
-        foreach ($recievers as $identifier) {
+        foreach ($recievers as $identifier => $userId) {
             $data[] = [
+                'user_id'    => $userId,
                 'identifier' => $identifier,
                 'title'      => $title,
                 'body'       => trim($body),
@@ -144,13 +145,17 @@ class Notifier
      * update notification log function
      *
      * @param string $type
-     * @param array $result
+     * @param mixed[] $result
+     * @param mixed[] $receivers
+     * @param string $body
      * @return void
      */
-    private static function updateLog(string $type, array $result)
+    private static function updateLog(string $type, array $result, array $receivers, string $body)
     {
-        $notifications = Notification::whereIn('identifier', $this->numbers)
-            ->where('body', trim($this->message))
+        $identifiers = array_keys($receivers);
+
+        $notifications = Notification::whereIn('identifier', $identifiers)
+            ->where('body', trim($body))
             ->where('type', ($type == 'sms' ? 0 : 1))
             ->get();
 

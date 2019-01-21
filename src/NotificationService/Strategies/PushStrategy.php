@@ -21,6 +21,9 @@ class PushStrategy implements NotificationInterface
     /** @var string[] tokens */
     private $tokens;
 
+    /** @var string[] recievers */
+    private $recievers;
+
     /** @var mixed[] extra data */
     private $extra;
 
@@ -74,7 +77,8 @@ class PushStrategy implements NotificationInterface
      */
     public function recievers(array $identifiers): NotificationInterface
     {
-        $this->tokens = $identifiers;
+        $this->tokens    = array_keys($identifiers);
+        $this->recievers = $identifiers;
 
         return $this;
     }

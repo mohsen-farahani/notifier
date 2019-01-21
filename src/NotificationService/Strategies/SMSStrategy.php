@@ -22,6 +22,9 @@ class SMSStrategy implements NotificationInterface
     /** @var string[] numbers */
     private $numbers;
 
+    /** @var string[] recievers */
+    private $recievers;
+
     /** @var Carbon expire date time */
     private $expireAt;
 
@@ -72,7 +75,8 @@ class SMSStrategy implements NotificationInterface
      */
     public function recievers(array $identifiers): NotificationInterface
     {
-        $this->numbers = $identifiers;
+        $this->numbers   = array_keys($identifiers);
+        $this->recievers = $identifiers;
 
         return $this;
     }
