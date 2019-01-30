@@ -50,7 +50,7 @@ class SendPushJob implements ShouldQueue
 
             $notifier->setTitle($this->title)
                 ->setBody($this->description)
-                ->recievers($this->tokens)
+                ->receivers($this->tokens)
                 ->setExpireAt($this->expireAt)
                 ->sendNotification('push');
 

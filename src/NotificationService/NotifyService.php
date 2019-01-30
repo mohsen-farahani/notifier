@@ -3,6 +3,7 @@
 namespace Asanbar\Notifier\NotificationService;
 
 use Asanbar\Notifier\NotificationService\Context;
+use Asanbar\Notifier\NotificationService\Strategies\MessageStrategy;
 use Asanbar\Notifier\NotificationService\Strategies\PushStrategy;
 use Asanbar\Notifier\NotificationService\Strategies\SMSStrategy;
 use Carbon\Carbon;
@@ -18,8 +19,8 @@ class NotifyService
     /** @var string body */
     private $body;
 
-    /** @var string[] recievers */
-    private $recievers;
+    /** @var string[] receivers */
+    private $receivers;
 
     /** @var mixed[] extra data */
     private $extra;
@@ -38,13 +39,21 @@ class NotifyService
         switch (strtolower($type)) {
             case 'sms':
                 $strategy = new SMSStrategy();
-                $strategy->recievers($this->recievers);
+                $strategy->receivers($this->receivers);
                 $strategy->setBody($this->body);
 
                 return (new Context($strategy))->executeStrategy();
             case 'push':
                 $strategy = new PushStrategy();
-                $strategy->recievers($this->recievers);
+                $strategy->receivers($this->receivers);
+                $strategy->setTitle($this->title);
+                $strategy->setBody($this->body);
+                $strategy->setExpireAt($this->expireAt);
+
+                return (new Context($strategy))->executeStrategy();
+            case 'message':
+                $strategy = new MessageStrategy();
+                $strategy->receivers($this->receivers);
                 $strategy->setTitle($this->title);
                 $strategy->setBody($this->body);
                 $strategy->setExpireAt($this->expireAt);
@@ -94,14 +103,14 @@ class NotifyService
     }
 
     /**
-     * set recievers identifiers function
+     * set receivers identifiers function
      *
      * @param array $identifiers
      * @return self
      */
-    public function recievers(array $identifiers): self
+    public function receivers(array $identifiers): self
     {
-        $this->recievers = $identifiers;
+        $this->receivers = $identifiers;
 
         return $this;
     }

@@ -73,6 +73,27 @@ public function sendPush(array $tokens, string $title, string $txt, ?array $data
 
 ```
 
+Set that a notification read by user
+
+```PHP
+Notifier::read($id);
+```
+
+## Read data
+You can use counts of notfications base on status and type
+
+```PHP
+Notifier::getCounts();
+Notifier::getCounts($userId); // with user iddentifier (id or mobile ...)
+```
+
+get reads or unreads notifications
+
+```PHP
+Notifier::getUnReads(); // or getReads()
+Notifier::getUnReads($identifier, $type, $limit); // all parameters are optional. If set limit it make paginator
+```
+
 ## Developer
 
 [Mehrad Aladini](mailto:aladini@asanbar.ir)

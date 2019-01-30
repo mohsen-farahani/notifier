@@ -30,12 +30,17 @@ interface NotificationInterface
     public function setBody(string $txt): self;
 
     /**
-     * set recievers identifiers function
+     * set receivers identifiers function
      *
      * @param array $identifiers
      * @return self
      */
-    public function recievers(array $identifiers): self;
+    public function receivers(array $identifiers): self;
 
+    /**
+     * send notification function
+     *
+     * @return array
+     */
     public function send(): array;
 }

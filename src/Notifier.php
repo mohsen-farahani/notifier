@@ -5,6 +5,7 @@ namespace Asanbar\Notifier;
 use Asanbar\Notifier\Jobs\SendMessageJob;
 use Asanbar\Notifier\Jobs\SendPushJob;
 use Asanbar\Notifier\Jobs\SendSmsJob;
+use Asanbar\Notifier\Models\Notification;
 use Asanbar\Notifier\NotificationService\NotifyService;
 use Carbon\Carbon;
 
@@ -15,6 +16,14 @@ class Notifier
 
     /** @var string queue name */
     private static $queueName = null;
+
+    /** @var int[] */
+    private static $typesKey = [
+        'sms'     => 0,
+        'push'    => 1,
+        'message' => 2,
+        'email'   => 3,
+    ];
 
     /**
      * static set queue name function
@@ -49,11 +58,11 @@ class Notifier
 
             $result = $notifier->setTitle($title)
                 ->setBody($description)
-                ->recievers($receivers)
+                ->receivers($receivers)
                 ->setExpireAt(self::$expireAt)
                 ->sendNotification('push');
 
-            self::updateLog('sms', $result, $receivers);
+            self::updateLog('push', $result, $receivers, '');
 
             return $result;
         }
@@ -79,11 +88,11 @@ class Notifier
             $notifier = app(NotifyService::class);
 
             $result = $notifier->setBody($description)
-                ->recievers($receivers)
+                ->receivers($receivers)
                 ->setExpireAt(self::$expireAt)
                 ->sendNotification('sms');
 
-            self::updateLog('sms', $result, $receivers);
+            self::updateLog('sms', $result, $receivers, $message);
 
             return $result;
 
@@ -94,16 +103,30 @@ class Notifier
         return true;
     }
 
-    public static function sendMessage(string $title, string $body, array $user_ids)
+    public static function sendMessage(string $title, string $body, array $receivers)
     {
-        //TODO: it should compatible with new structure ...
-        dispatch((new SendMessageJob($title, $body, $user_ids, self::$expireAt))->onQueue('message'));
+        self::saveLog('message', $receivers, $body, $title);
 
-        return true;
+        if (self::$queueName === null
+            && (self::$expireAt === null || !Carbon::now()->gt(self::$expireAt))) { //if expireAt is zero or now not greater than expireAt
+            $notifier = app(NotifyService::class);
+
+            $result = $notifier->setTitle($title)
+                ->setBody($body)
+                ->receivers($receivers)
+                ->setExpireAt(self::$expireAt)
+                ->sendNotification('message');
+
+            self::updateLog('message', $result, $receivers, $body);
+
+            return $result;
+        }
+
+        return dispatch((new SendMessageJob($title, $body, $receivers, self::$expireAt))->onQueue('message'));
     }
 
     /**
-     * static setr expire at function
+     * static setter expire at function
      *
      * @param Carbon $expireAt
      * @return void
@@ -114,23 +137,171 @@ class Notifier
     }
 
     /**
+     * static function to set read notification
+     *
+     * @param int $id
+     * @return bool
+     */
+    public static function read(int $id): bool
+    {
+        $notification = Notification::findWithoutFail(id);
+
+        if (empty($notification)) {
+            return false;
+        }
+
+        $notification->read_at = date('Y-m-d H:i:s');
+        $notification->update();
+
+        return true;
+    }
+
+    /**
+     * static function to get read notifications
+     *
+     * @param mixed|null $identifier
+     * @param string|null $type
+     * @param int|null $limit
+     * @return object
+     */
+    public static function getReads($identifier = null, ?string $type = null, ?int $limit = null): object
+    {
+        $query = Notification::whereNotNull('read_at');
+
+        if ($identifier !== null) {
+            $query = $query->where('user_id', $identifier)
+                ->orWhere('identifier', $identifier);
+        }
+
+        if ($type !== null) {
+            $query = $query->Where('type', $type);
+        }
+
+        if ($limit !== null) {
+            $notifications = $query->paginate($limit);
+        } else {
+            $notifications = $query->get();
+        }
+
+        return $notifications;
+    }
+
+    /**
+     * static function to get unread notifications
+     *
+     * @param mixed|null $identifier
+     * @param string|null $type
+     * @param int|null $limit
+     * @return object
+     */
+    public static function getUnReads($identifier = null, ?string $type = null, ?int $limit = null): object
+    {
+        $query = Notification::whereNull('read_at');
+
+        if ($identifier !== null) {
+            $query = $query->where('user_id', $identifier)
+                ->orWhere('identifier', $identifier);
+        }
+
+        if ($type !== null) {
+            $query = $query->Where('type', $type);
+        }
+
+        if ($limit !== null) {
+            $notifications = $query->paginate($limit);
+        } else {
+            $notifications = $query->get();
+        }
+
+        return $notifications;
+    }
+
+    /**
+     * static function to get count of notifications base on status
+     *
+     * @param mixed|null $identifier
+     * @return array
+     */
+    public static function getCounts($identifier = null): array
+    {
+        $query = Notification::select([
+            'user_id',
+            'identifier',
+            'type',
+            \DB::raw('COUNT(id) AS all'),
+            \DB::raw('
+                 SUM(
+                    CASE
+                        WHEN
+                            success_at IS NOT NULL
+                        THEN
+                            1
+                        ELSE
+                            0
+                    END
+                ) AS success_count
+            '),
+            \DB::raw('
+                 SUM(
+                    CASE
+                        WHEN
+                            read_at IS NOT NULL
+                        THEN
+                            1
+                        ELSE
+                            0
+                    END
+                ) AS read_count
+            '),
+            \DB::raw('
+                 SUM(
+                    CASE
+                        WHEN
+                            error IS NOT NULL
+                        THEN
+                            1
+                        ELSE
+                            0
+                    END
+                ) AS failed_count
+            '),
+        ]);
+
+        if ($identifier !== null) {
+            $query = $query->where('user_id', $identifier)
+                ->orWhere('identifier', $identifier);
+        }
+
+        $data = $query->groupBy('type')
+            ->get()
+            ->toArray();
+
+        $keys = array_flip(self::$typesKey);
+        foreach ($data as $value) {
+            $result[$keys[$value['type']]] = $value;
+        }
+
+        return $result;
+    }
+
+    /**
      * save notification log function
      *
      * @param string $type
-     * @param array $recievers
+     * @param array $receivers
      * @param string $body
      * @param string|null $title
      * @return boolean
      */
-    private static function saveLog(string $type, array $recievers, string $body, ?string $title = null): bool
+    private static function saveLog(string $type, array $receivers, string $body, ?string $title = null): bool
     {
-        foreach ($recievers as $identifier => $userId) {
+        foreach ($receivers as $identifier => $userId) {
             $data[] = [
                 'user_id'    => $userId,
                 'identifier' => $identifier,
                 'title'      => $title,
                 'body'       => trim($body),
-                'type'       => ($type == 'sms' ? 0 : 1),
+                'type'       => self::$typesKey[$type],
                 'expire_at'  => self::$expireAt,
                 'queued_at'  => date('Y-m-d H:i:s'),
                 'try'        => 0,
@@ -156,7 +327,7 @@ class Notifier
 
         $notifications = Notification::whereIn('identifier', $identifiers)
             ->where('body', trim($body))
-            ->where('type', ($type == 'sms' ? 0 : 1))
+            ->where('type', self::$typesKey[$type])
             ->get();
 
         foreach ($notifications as $notification) {

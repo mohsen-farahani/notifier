@@ -21,8 +21,8 @@ class PushStrategy implements NotificationInterface
     /** @var string[] tokens */
     private $tokens;
 
-    /** @var string[] recievers */
-    private $recievers;
+    /** @var string[] receivers */
+    private $receivers;
 
     /** @var mixed[] extra data */
     private $extra;
@@ -70,19 +70,24 @@ class PushStrategy implements NotificationInterface
     }
 
     /**
-     * set recievers identifiers function
+     * set receivers identifiers function
      *
      * @param array $identifiers
      * @return NotificationInterface
      */
-    public function recievers(array $identifiers): NotificationInterface
+    public function receivers(array $identifiers): NotificationInterface
     {
         $this->tokens    = array_keys($identifiers);
-        $this->recievers = $identifiers;
+        $this->receivers = $identifiers;
 
         return $this;
     }
 
+    /**
+     * send push function
+     *
+     * @return array
+     */
     public function send(): array
     {
         if (empty(env("PUSH_PROVIDERS_PRIORITY")) || !env("PUSH_PROVIDERS_PRIORITY")) {
@@ -123,6 +128,8 @@ class PushStrategy implements NotificationInterface
                 $finalResult = array_merge($finalResult, $response);
 
                 if ($response["all_success"]) {
+                    $this->updateLog($finalResult);
+
                     return $finalResult;
                 }
 

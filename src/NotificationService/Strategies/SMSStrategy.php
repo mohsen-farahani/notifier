@@ -22,8 +22,8 @@ class SMSStrategy implements NotificationInterface
     /** @var string[] numbers */
     private $numbers;
 
-    /** @var string[] recievers */
-    private $recievers;
+    /** @var string[] receivers */
+    private $receivers;
 
     /** @var Carbon expire date time */
     private $expireAt;
@@ -68,15 +68,15 @@ class SMSStrategy implements NotificationInterface
     }
 
     /**
-     * set recievers identifiers function
+     * set receivers identifiers function
      *
      * @param array $identifiers
      * @return NotificationInterface
      */
-    public function recievers(array $identifiers): NotificationInterface
+    public function receivers(array $identifiers): NotificationInterface
     {
         $this->numbers   = array_keys($identifiers);
-        $this->recievers = $identifiers;
+        $this->receivers = $identifiers;
 
         return $this;
     }
@@ -122,6 +122,8 @@ class SMSStrategy implements NotificationInterface
             $finalResult = array_merge($finalResult, $response);
 
             if ($response["all_success"]) {
+                $this->updateLog($finalResult);
+
                 return $finalResult;
             }
 

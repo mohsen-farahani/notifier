@@ -45,7 +45,7 @@ class SendSmsJob implements ShouldQueue
             $notifier = app(NotifyService::class);
 
             $notifier->setBody($this->message)
-                ->recievers($this->numbers)
+                ->receivers($this->numbers)
                 ->sendNotification('sms');
         }
     }

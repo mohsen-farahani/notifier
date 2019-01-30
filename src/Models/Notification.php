@@ -65,7 +65,14 @@ class Notification extends Model
     const CREATED_AT = 'created_at';
     const UPDATED_AT = 'updated_at';
 
-    protected $dates = ['deleted_at'];
+    /** @var string[] dates fields */
+    protected $dates = [
+        'expire_at',
+        'queued_at',
+        'success_at',
+        'read_at',
+        'deleted_at',
+    ];
 
     public $fillable = [
         'user_id',
@@ -77,6 +84,7 @@ class Notification extends Model
         'expire_at',
         'queued_at',
         'success_at',
+        'read_at',
         'try',
         'error',
     ];
@@ -92,7 +100,7 @@ class Notification extends Model
         'identifier'    => 'string',
         'title'         => 'string',
         'body'          => 'string',
-        'type'          => 'boolean',
+        'type'          => 'integer',
         'provider_name' => 'string',
         'error'         => 'string',
     ];

@@ -3,101 +3,155 @@
 namespace Asanbar\Notifier\NotificationService\Strategies;
 
 use Asanbar\Notifier\Models\Message;
+use Asanbar\Notifier\Models\Notification;
 use Asanbar\Notifier\NotificationService\NotificationInterface;
 use Asanbar\Notifier\NotificationService\Strategies\NotificationProviders\MessageProviders\MessageAbstract;
-use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class MessageStrategy implements NotificationInterface
 {
-    private $current_provider = null;
+    /** @var string provider name */
+    private $providerName = null;
+
+    /** @var string title  */
     private $title;
+
+    /** @var string body */
     private $body;
-    private $user_ids;
-    private $expire_at;
-    private $options;
 
-    public function sendMessage()
+    /** @var string[] numbers */
+    private $numbers;
+
+    /** @var string[] receivers */
+    private $receivers;
+
+    /** @var Carbon expire date time */
+    private $expireAt;
+
+    /**
+     * set expire at function
+     *
+     * @param Carbon|null $time
+     * @return NotificationInterface
+     */
+    public function setExpireAt(?Carbon $time = null): NotificationInterface
     {
-        if (empty(env("MESSAGE_PROVIDERS_PRIORITY")) || !env("MESSAGE_PROVIDERS_PRIORITY")) {
-            return false;
-        }
+        $this->expireAt = $time;
 
-        $message_providers_priority = explode(",", env("MESSAGE_PROVIDERS_PRIORITY"));
+        return $this;
+    }
 
-        if (!$message_providers_priority) {
-            $this->logNoProvidersAvailable();
+    /**
+     *  set title function
+     *
+     * @param string $title
+     * @return NotificationInterface
+     */
+    public function setTitle(string $title): NotificationInterface
+    {
+        $this->title = $title;
 
-            return false;
-        }
+        return $this;
+    }
 
-        foreach ($message_providers_priority as $message_provider) {
-            $current_provider = MessageAbstract::resolve($message_provider);
+    /**
+     * set body function
+     *
+     * @param string $txt
+     * @return NotificationInterface
+     */
+    public function setBody(string $txt): NotificationInterface
+    {
+        $this->body = $txt;
 
-            if (!$current_provider) {
+        return $this;
+    }
+
+    /**
+     * set receivers identifiers function
+     *
+     * @param array $identifiers
+     * @return NotificationInterface
+     */
+    public function receivers(array $identifiers): NotificationInterface
+    {
+        $this->numbers   = array_keys($identifiers);
+        $this->receivers = $identifiers;
+
+        return $this;
+    }
+
+    /**
+     * send message function
+     *
+     * @return array
+     */
+    public function send(): array
+    {
+        $messageProviders = explode(",", env("MESSAGE_PROVIDERS_PRIORITY", 'Database'));
+
+        $finalResult = [];
+        foreach ($messageProviders as $messageProvider) {
+            $currentProvider = MessageAbstract::resolve($messageProvider);
+
+            if (!$currentProvider) {
                 continue;
             }
 
-            $this->current_provider = $message_provider;
+            $this->currentProvider = $messageProvider;
 
-            $response = $current_provider->options($this->options)
-                ->send(
-                    $this->title,
-                    $this->body,
-                    $this->user_ids,
-                    $this->expire_at
-                );
-
-            if (isset($response["result_id"]) && $response["result_id"] != null) {
-                $this->logMessageSent();
-
-                Message::createSentMessages(
-                    $this->current_provider,
-                    $this->user_ids,
-                    $this->title,
-                    $this->body,
-                    $response["result_id"]
-                );
-
-                continue;
-            }
-
-            Message::createSendFailedMessages(
-                $this->current_provider,
-                $this->user_ids,
+            $response = $currentProvider->send(
                 $this->title,
                 $this->body,
-                $response
+                $this->receivers,
+                $this->expireAt
             );
 
-            $this->logMessageSendFailed();
+            $finalResult = array_merge($finalResult, $response);
+
+            if ($response["all_success"]) {
+                $this->updateLog($finalResult);
+
+                return $finalResult;
+            }
+
+            $numbers = [];
+            foreach ($response['detail'] as $number => $value) {
+                if (!$value['success']) {
+                    $numbers[] = $number;
+                }
+            }
         }
 
-        return false;
+        $this->updateLog($finalResult);
+
+        if ($finalResult['success_count'] == 0) {
+            throw new SendSMSFailedException(
+                "Notifier: Sending SMS failed",
+                ", Text: " . $this->message,
+                $this->numbers,
+                $response['response']
+            );
+        }
+
+        return $finalResult;
     }
 
-    public function logNoProvidersAvailable()
+    private function updateLog(array $result)
     {
-        Log::error("Notifier: No MESSAGE_PROVIDERS_PRIORITY env available");
-    }
+        $notifications = Notification::whereIn('identifier', $this->receivers)
+            ->where('body', trim($this->body))
+            ->where('type', 2)
+            ->get();
 
-    public function logMessageSent()
-    {
-        Log::info(
-            "Notifier: Message sent via " .
-            strtoupper($this->current_provider) .
-            ", Title: " . $this->title .
-            ", Body: " . $this->body .
-            ", User Ids: " . implode(",", $this->user_ids)
-        );
-    }
+        foreach ($notifications as $notification) {
+            $sendResult = $result['detail'][$notification->identifier];
 
-    public function logMessageSendFailed()
-    {
-        Log::warning("Notifier: Sending message failed via " .
-            strtoupper($this->current_provider) .
-            ", Title: " . $this->title .
-            ", Body: " . $this->body .
-            ", User Ids: " . implode(",", $this->user_ids)
-        );
+            $notification->provider_name = $sendResult['provider'];
+            $notification->success_at    = ($sendResult['success'] ? date('Y-m-d H:i:s') : null);
+            $notification->try++;
+            $notification->error = (!$sendResult['success'] ? $sendResult['response'] : null);
+            $notification->update();
+        }
     }
 }
