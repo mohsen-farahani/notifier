@@ -140,11 +140,16 @@ class Notifier
      * static function to set read notification
      *
      * @param int $id
+     * @param string|integer $identifier
      * @return bool
      */
-    public static function read(int $id): bool
+    public static function read(int $id, $identifier): bool
     {
-        $notification = Notification::findWithoutFail(id);
+        $notification = Notification::where('id', $id)
+            ->whereNull('read_at')
+            ->where('user_id', $identifier)
+            ->orWhere('identifier', $identifier)
+            ->first();
 
         if (empty($notification)) {
             return false;
@@ -228,7 +233,7 @@ class Notifier
             'user_id',
             'identifier',
             'type',
-            \DB::raw('COUNT(id) AS all'),
+            \DB::raw('COUNT(id) AS all_count'),
             \DB::raw('
                  SUM(
                     CASE
@@ -278,7 +283,8 @@ class Notifier
 
         $keys = array_flip(self::$typesKey);
         foreach ($data as $value) {
-            $result[$keys[$value['type']]] = $value;
+            $result[$keys[$value['type']]]                 = $value;
+            $result[$keys[$value['type']]]['unread_count'] = $value['success_count'] - $value['read_count'];
         }
 
         return $result;
