@@ -12,18 +12,19 @@ class SmsirProvider extends SmsAbstract
     use RestConnector;
 
     public $from;
-    private $send_uri;
-    private $token_uri;
-    private $user_api_key;
-    private $secret_key;
+    private $sendURI;
+    private $tokenURI;
+    private $userApiKey;
+    private $secretKey;
 
     public function __construct()
     {
-        $this->send_uri     = "http://restfulsms.com/api/MessageSend";
-        $this->token_uri    = "http://restfulsms.com/api/Token";
-        $this->user_api_key = config("notifier.sms.smsir.api_key");
-        $this->secret_key   = config("notifier.sms.smsir.secret_key");
-        $this->from         = config("notifier.sms.smsir.line_number");
+        $this->sendURI    = "http://restfulsms.com/api/MessageSend";
+        $this->receiveURI = "https://restfulsms.com/api/ReceiveMessage";
+        $this->tokenURI   = "http://restfulsms.com/api/Token";
+        $this->userApiKey = config("notifier.sms.smsir.api_key");
+        $this->secretKey  = config("notifier.sms.smsir.secret_key");
+        $this->from       = config("notifier.sms.smsir.line_number");
     }
 
     /**
@@ -50,7 +51,7 @@ class SmsirProvider extends SmsAbstract
         ];
 
         $response = $this->post(
-            $this->send_uri,
+            $this->sendURI,
             [
                 "json"    => $body,
                 "headers" => $headers,
@@ -107,6 +108,46 @@ class SmsirProvider extends SmsAbstract
         return $result;
     }
 
+    public function receiveMessages(): array
+    {
+        $response = $this->get(
+            $this->receiveURI,
+            [
+                'Shamsi_FromDate'     => '1397/10/01',
+                'Shamsi_ToDate'       => date('Y/m/d'),
+                'RowsPerPage'         => 100,
+                'RequestedPageNumber' => 1,
+            ],
+            [
+                "headers" => [
+                    "x-sms-ir-secure-token" => $this->getToken(),
+                ],
+            ]
+        );
+        $result = json_decode($response->getBody()
+                ->getContents(), true);
+
+        $finalResult = [
+            'total'    => $result['CountOfAll'],
+            'status'   => $result['IsSuccessful'],
+            'message'  => $result['Message'],
+            'messages' => [],
+        ];
+
+        foreach ($result['Messages'] as $message) {
+            $finalResult['messages'][] = [
+                'id'                => $message['ID'],
+                'sender_identifier' => '0' . $message['MobileNo'],
+                'body'              => $message['SMSMessageBody'],
+                'send_at'           => Carbon::parse($message['LatinReceiveDateTime'])->format('Y-m-d H:i:s'),
+            ];
+
+            $finalResult['identifiers'][] = '0' . $message['MobileNo'];
+        }
+
+        return $finalResult;
+    }
+
     /**
      * get token from provider function
      *
@@ -115,13 +156,13 @@ class SmsirProvider extends SmsAbstract
     private function getToken(): ?string
     {
         $request = [
-            "UserApiKey" => $this->user_api_key,
-            "SecretKey"  => $this->secret_key,
+            "UserApiKey" => $this->userApiKey,
+            "SecretKey"  => $this->secretKey,
             "System"     => "Notifier",
         ];
 
         $response = $this->post(
-            $this->token_uri,
+            $this->tokenURI,
             ["json" => $request]
         );
 
@@ -134,4 +175,5 @@ class SmsirProvider extends SmsAbstract
         Log::error("Notifier: Could not get token from SMS.ir");
         return null;
     }
+
 }

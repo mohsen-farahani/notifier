@@ -11,8 +11,8 @@ class Sms0098Provider extends SmsAbstract
     use RestConnector;
 
     public $from;
-    private $send_uri = "http://www.0098sms.com/sendsmslink.aspx";
-    private $domain   = "0098";
+    private $sendURI = "http://www.0098sms.com/sendsmslink.aspx";
+    private $domain  = "0098";
     private $username;
     private $password;
 
@@ -48,7 +48,7 @@ class Sms0098Provider extends SmsAbstract
             $query['TO'] = $number;
 
             $response = $this->get(
-                $this->send_uri,
+                $this->sendURI,
                 $query
             );
 
@@ -68,6 +68,20 @@ class Sms0098Provider extends SmsAbstract
         }
 
         return $result;
+    }
+
+    /**
+     * receive sms from provider function
+     *
+     * @return mixed[]
+     */
+    protected function receiveMessages(): array
+    {
+        //TODO: should implement
+        return [
+            'all'    => 0,
+            'status' => false,
+        ];
     }
 
     private function isSuccess($response): bool

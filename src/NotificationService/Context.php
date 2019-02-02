@@ -21,8 +21,18 @@ class Context
      *
      * @return mixed
      */
-    public function executeStrategy()
+    public function executeSendStrategy()
     {
         return $this->strategy->send();
+    }
+
+    /**
+     * strategy executor function
+     *
+     * @return mixed
+     */
+    public function executeReceiveStrategy()
+    {
+        return $this->strategy->receive();
     }
 }

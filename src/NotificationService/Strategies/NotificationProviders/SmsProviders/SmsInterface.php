@@ -14,4 +14,11 @@ interface SmsInterface
      * @return array
      */
     public function send(string $message, array $numbers, ?Carbon $expireAt = null): array;
+
+    /**
+     * receive messages function
+     *
+     * @return mixed[]
+     */
+    public function receive(): array;
 }

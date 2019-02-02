@@ -80,6 +80,7 @@ class Notification extends Model
         'title',
         'body',
         'type',
+        'action_type',
         'provider_name',
         'expire_at',
         'queued_at',
@@ -101,8 +102,22 @@ class Notification extends Model
         'title'         => 'string',
         'body'          => 'string',
         'type'          => 'integer',
+        'action_type'   => 'integer',
         'provider_name' => 'string',
         'error'         => 'string',
     ];
 
+    /** @var int[] */
+    public static $typesKey = [
+        'sms'     => 0,
+        'push'    => 1,
+        'message' => 2,
+        'email'   => 3,
+    ];
+
+    /** @var int[] */
+    public static $actionTypesKey = [
+        'send'    => 0,
+        'receive' => 1,
+    ];
 }

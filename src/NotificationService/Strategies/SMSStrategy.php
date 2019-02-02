@@ -149,6 +149,39 @@ class SMSStrategy implements NotificationInterface
         return $finalResult;
     }
 
+    /**
+     * receive sms function
+     *
+     * @return array
+     */
+    public function receive(): array
+    {
+        $providersPriority = explode(",", env("SMS_RECEIVERS_PROVIDERS_PRIORITY", 'smsir'));
+
+        if (!$providersPriority) {
+            throw new \Exception('Notifier: No SMS_PROVIDERS_PRIORITY env available');
+        }
+
+        $finalResult = [
+            'total'  => 0,
+            'status' => false,
+        ];
+
+        $numbers = $this->numbers;
+        foreach ($providersPriority as $providerName) {
+            $activeProvider = SmsAbstract::resolve($providerName);
+
+            if (!$activeProvider) {
+                throw new \Exception('sms provider ' . $providerName . ' class not found');
+            }
+
+            $result      = $activeProvider->receive();
+            $finalResult = array_merge($finalResult, $result);
+        }
+
+        return $finalResult;
+    }
+
     private function updateLog(array $result)
     {
         $notifications = Notification::whereIn('identifier', $this->numbers)

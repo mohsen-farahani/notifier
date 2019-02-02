@@ -17,14 +17,6 @@ class Notifier
     /** @var string queue name */
     private static $queueName = null;
 
-    /** @var int[] */
-    private static $typesKey = [
-        'sms'     => 0,
-        'push'    => 1,
-        'message' => 2,
-        'email'   => 3,
-    ];
-
     /**
      * static set queue name function
      *
@@ -75,7 +67,7 @@ class Notifier
      *
      * @param string $message
      * @param array $receivers
-     * @return void
+     * @return mixed
      */
     public static function sendSMS(string $message, array $receivers)
     {
@@ -103,6 +95,26 @@ class Notifier
         return true;
     }
 
+    /**
+     * receive sms function
+     *
+     * @return mixed[]
+     */
+    public static function receiveSMS(): array
+    {
+        $notifier = app(NotifyService::class);
+
+        return $notifier->receiveNotification('sms');
+    }
+
+    /**
+     * send direct message function
+     *
+     * @param string $title
+     * @param string $body
+     * @param array $receivers
+     * @return mixed
+     */
     public static function sendMessage(string $title, string $body, array $receivers)
     {
         self::saveLog('message', $receivers, $body, $title);
@@ -281,7 +293,7 @@ class Notifier
             ->get()
             ->toArray();
 
-        $keys = array_flip(self::$typesKey);
+        $keys = array_flip(Notification::$typesKey);
         foreach ($data as $value) {
             $result[$keys[$value['type']]]                 = $value;
             $result[$keys[$value['type']]]['unread_count'] = $value['success_count'] - $value['read_count'];
@@ -307,7 +319,7 @@ class Notifier
                 'identifier' => $identifier,
                 'title'      => $title,
                 'body'       => trim($body),
-                'type'       => self::$typesKey[$type],
+                'type'       => Notification::$typesKey[$type],
                 'expire_at'  => self::$expireAt,
                 'queued_at'  => date('Y-m-d H:i:s'),
                 'try'        => 0,
@@ -333,7 +345,7 @@ class Notifier
 
         $notifications = Notification::whereIn('identifier', $identifiers)
             ->where('body', trim($body))
-            ->where('type', self::$typesKey[$type])
+            ->where('type', Notification::$typesKey[$type])
             ->get();
 
         foreach ($notifications as $notification) {

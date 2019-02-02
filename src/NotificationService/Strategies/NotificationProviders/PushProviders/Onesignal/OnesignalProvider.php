@@ -12,7 +12,7 @@ class OnesignalProvider extends PushAbstract
 {
     use RestConnector;
 
-    public $send_uri = "https://onesignal.com/api/v1/notifications";
+    public $sendURI = "https://onesignal.com/api/v1/notifications";
 
     /**
      * Implementing send push notification
@@ -42,7 +42,7 @@ class OnesignalProvider extends PushAbstract
 
         try {
             $response = $this->post(
-                $this->send_uri,
+                $this->sendURI,
                 [
                     "headers" => $headers,
                     "body" => json_encode($request)

@@ -42,7 +42,7 @@ class NotifyService
                 $strategy->receivers($this->receivers);
                 $strategy->setBody($this->body);
 
-                return (new Context($strategy))->executeStrategy();
+                return (new Context($strategy))->executeSendStrategy();
             case 'push':
                 $strategy = new PushStrategy();
                 $strategy->receivers($this->receivers);
@@ -50,7 +50,7 @@ class NotifyService
                 $strategy->setBody($this->body);
                 $strategy->setExpireAt($this->expireAt);
 
-                return (new Context($strategy))->executeStrategy();
+                return (new Context($strategy))->executeSendStrategy();
             case 'message':
                 $strategy = new MessageStrategy();
                 $strategy->receivers($this->receivers);
@@ -58,7 +58,32 @@ class NotifyService
                 $strategy->setBody($this->body);
                 $strategy->setExpireAt($this->expireAt);
 
-                return (new Context($strategy))->executeStrategy();
+                return (new Context($strategy))->executeSendStrategy();
+
+        }
+    }
+
+    /**
+     * strategy decision function
+     *
+     * @param string $type
+     * @return void
+     */
+    public function receiveNotification(string $type)
+    {
+        switch (strtolower($type)) {
+            case 'sms':
+                $strategy = new SMSStrategy();
+
+                return (new Context($strategy))->executeReceiveStrategy();
+            case 'push':
+                $strategy = new PushStrategy();
+
+                return (new Context($strategy))->executeReceiveStrategy();
+            case 'message':
+                $strategy = new MessageStrategy();
+
+                return (new Context($strategy))->executeReceiveStrategy();
 
         }
     }

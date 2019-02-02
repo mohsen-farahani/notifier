@@ -12,16 +12,24 @@ trait RestConnector
      * Implements HTTP GET request via Guzzle
      *
      * @param string $uri
-     * @param array $request
+     * @param array|null $queries
+     * @param array|null $request
      * @return array|mixed
      */
-    public function get($uri, $request = [])
+    public function get(string $uri, ?array $queries, ?array $request = [])
     {
         try {
+            $params = [
+                "query" => http_build_query($queries),
+            ];
+            if (!empty($request)) {
+                $params = array_merge_recursive($params, $request);
+            }
+
             return (new Client())->request(
                 "GET",
                 $uri,
-                ["query" => http_build_query($request)]
+                $params
             );
         } catch (RequestException $exception) {
             Log::error("Notifier: RestConnector GET Exception: " . $exception->getResponse()->getBody()->getContents());
