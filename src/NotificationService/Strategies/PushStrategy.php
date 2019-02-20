@@ -6,6 +6,7 @@ use Asanbar\Notifier\Models\Notification;
 use Asanbar\Notifier\NotificationService\NotificationInterface;
 use Asanbar\Notifier\NotificationService\Strategies\NotificationProviders\PushProviders\PushAbstract;
 use Carbon\Carbon;
+use Asanbar\Notifier\Exceptions\SendPushFailedException;
 
 class PushStrategy implements NotificationInterface
 {
@@ -84,6 +85,19 @@ class PushStrategy implements NotificationInterface
     }
 
     /**
+     * set extra function
+     *
+     * @param array $extra
+     * @return NotificationInterface
+     */
+    public function setExtra(array $extra): NotificationInterface
+    {
+        $this->extra = $extra;
+
+        return $this;
+    }
+
+    /**
      * send push function
      *
      * @return array
@@ -115,6 +129,7 @@ class PushStrategy implements NotificationInterface
             $this->providerName = $pushProvider;
 
             $tokenChunks = array_chunk($this->tokens, 2000);
+            
 
             foreach ($tokenChunks as $tokens) {
                 $response = $provider->send(

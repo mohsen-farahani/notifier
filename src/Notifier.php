@@ -39,7 +39,7 @@ class Notifier
      */
     public static function sendPush(string $title, string $description, array $receivers, array $extraData = null)
     {
-        self::saveLog('push', $receivers, $description, $title);
+        self::saveLog('push', $receivers, $description, $title , $extraData);
 
         if (
             self::$queueName === null
@@ -311,14 +311,16 @@ class Notifier
      * @param string|null $title
      * @return boolean
      */
-    private static function saveLog(string $type, array $receivers, string $body, ?string $title = null): bool
+    private static function saveLog(string $type, array $receivers, string $body, ?string $title = null , ?array $extraData = null): bool
     {
+
         foreach ($receivers as $identifier => $userId) {
             $data[] = [
                 'user_id'    => $userId,
                 'identifier' => $identifier,
                 'title'      => $title,
                 'body'       => trim($body),
+                'extra'      => json_encode($extraData),
                 'type'       => Notification::$typesKey[$type],
                 'expire_at'  => self::$expireAt,
                 'queued_at'  => date('Y-m-d H:i:s'),
