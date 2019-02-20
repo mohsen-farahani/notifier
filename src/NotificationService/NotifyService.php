@@ -47,6 +47,7 @@ class NotifyService
                 $strategy = new PushStrategy();
                 $strategy->receivers($this->receivers);
                 $strategy->setTitle($this->title);
+                $strategy->setExtra($this->extra);
                 $strategy->setBody($this->body);
                 $strategy->setExpireAt($this->expireAt);
 
@@ -136,6 +137,19 @@ class NotifyService
     public function receivers(array $identifiers): self
     {
         $this->receivers = $identifiers;
+
+        return $this;
+    }
+
+    /**
+     * set setExtra function
+     *
+     * @param array $extra
+     * @return self
+     */
+    public function setExtra(array $extra): self
+    {
+        $this->extra = $extra;
 
         return $this;
     }
