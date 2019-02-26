@@ -159,8 +159,10 @@ class Notifier
     {
         $notification = Notification::where('id', $id)
             ->whereNull('read_at')
-            ->where('user_id', $identifier)
-            ->orWhere('identifier', $identifier)
+            ->where(function($q) use ($identifier) {
+                $q->where('user_id', $identifier);
+                $q->orWhere('identifier', $identifier);
+            })
             ->first();
 
         if (empty($notification)) {
