@@ -296,6 +296,7 @@ class Notifier
             ->toArray();
 
         $keys = array_flip(Notification::$typesKey);
+        $result = [];
         foreach ($data as $value) {
             $result[$keys[$value['type']]]                 = $value;
             $result[$keys[$value['type']]]['unread_count'] = $value['success_count'] - $value['read_count'];
