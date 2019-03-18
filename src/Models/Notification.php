@@ -88,6 +88,7 @@ class Notification extends Model
         'read_at',
         'try',
         'error',
+        'extra_flag'
     ];
 
     /**
@@ -105,6 +106,7 @@ class Notification extends Model
         'action_type'   => 'integer',
         'provider_name' => 'string',
         'error'         => 'string',
+        'extra_flag'         => 'string',
     ];
 
     /** @var int[] */

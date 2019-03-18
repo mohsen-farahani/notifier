@@ -37,9 +37,9 @@ class Notifier
      * @param array $extraData
      * @return void
      */
-    public static function sendPush(string $title, string $description, array $receivers, array $extraData = null)
+    public static function sendPush(string $title, string $description, array $receivers, array $extraData = null , ?string $extraFlag = null)
     {
-        self::saveLog('push', $receivers, $description, $title , $extraData);
+        self::saveLog('push', $receivers, $description, $title , $extraData , $extraFlag);
 
         if (
             self::$queueName === null
@@ -69,9 +69,9 @@ class Notifier
      * @param array $receivers
      * @return mixed
      */
-    public static function sendSMS(string $message, array $receivers)
+    public static function sendSMS(string $message, array $receivers , ?string $extraFlag = null)
     {
-        self::saveLog('sms', $receivers, $message);
+        self::saveLog('sms', $receivers, $message , null , null , $extraFlag);
 
         if (
             self::$queueName === null
@@ -115,9 +115,9 @@ class Notifier
      * @param array $receivers
      * @return mixed
      */
-    public static function sendMessage(string $title, string $body, array $receivers)
+    public static function sendMessage(string $title, string $body, array $receivers , ?string $extraFlag = null)
     {
-        self::saveLog('message', $receivers, $body, $title);
+        self::saveLog('message', $receivers, $body, $title , null , $extraFlag);
 
         if (self::$queueName === null
             && (self::$expireAt === null || !Carbon::now()->gt(self::$expireAt))) { //if expireAt is zero or now not greater than expireAt
@@ -314,7 +314,7 @@ class Notifier
      * @param string|null $title
      * @return boolean
      */
-    private static function saveLog(string $type, array $receivers, string $body, ?string $title = null , ?array $extraData = null): bool
+    private static function saveLog(string $type, array $receivers, string $body, ?string $title = null , ?array $extraData = null , ?string $extraFlag = null): bool
     {
 
         foreach ($receivers as $identifier => $userId) {
@@ -324,6 +324,7 @@ class Notifier
                 'title'      => $title,
                 'body'       => trim($body),
                 'extra'      => json_encode($extraData),
+                'extra_flag' => $extraFlag,
                 'type'       => Notification::$typesKey[$type],
                 'expire_at'  => self::$expireAt,
                 'queued_at'  => date('Y-m-d H:i:s'),
